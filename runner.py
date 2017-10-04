@@ -1,30 +1,40 @@
 #!/usr/bin/env python
 
-import kinect_lib.freenect as freenect
-import kinect_lib.frame_convert as frame_convert
-from freenect import sync_get_video as get_video
+from freenect import sync_get_video as get_video, sync_get_depth as get_depth
+import freenect
 import os
 import sys
 import numpy as np
 import signal
-import cv2
+import frame_convert2
 from time import time
+import cv2
 
 ## write code to get take the kinect images and then convert frames to tf records
 ## tf records then get fed into the tf-models object recognition pipeline
 
+cv2.namedWindow('Depth')
+cv2.namedWindow('RGB')
 KEEP_RUNNING = True
 
+def get_depth():
+    return frame_convert2.pretty_depth_cv(freenect.sync_get_depth()[0])
+
+
+def get_video():
+    return frame_convert2.video_cv(freenect.sync_get_video()[0])
 
 def run():
-    start = time()
     while KEEP_RUNNING:
-        rgb, _ = get_video()
-        d3 = np.dstack((r,g,depth/20)).astype(np.uint8)
-        da = np.hstack((d3,rgb[::2, ::2]))
-        ## downsample image and then
-        cv2.imshow('image', da)
-        cv2.waitKey(0)
+        # cv2.imshow('Depth', get_depth())
+        cv2.imshow('Video', get_video())
+        if cv2.waitKey(10) == 27:
+            break
+
+    # print('Press ESC in window to stop')
+    # freenect.runloop(depth=display_depth,
+    #                  video=display_rgb,
+    #                  body=body)
     return
 
 if __name__ == '__main__':

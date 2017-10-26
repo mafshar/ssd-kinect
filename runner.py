@@ -105,8 +105,52 @@ KEEP_RUNNING = True
 def get_video():
     return frame_convert2.video_cv(freenect.sync_get_video()[0])
 
+def fig2data ( fig ):
+    """
+    @brief Convert a Matplotlib figure to a 4D np array with RGBA channels and return it
+    @param fig a matplotlib figure
+    @return a np 3D array of RGBA values
+    """
+    # draw the renderer
+    fig.canvas.draw ( )
+
+    # Get the RGBA buffer from the figure
+    w,h = fig.canvas.get_width_height()
+    buf = np.fromstring ( fig.canvas.tostring_argb(), dtype=np.uint8 )
+    buf.shape = ( w, h,4 )
+
+    # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+    buf = np.roll ( buf, 3, axis = 2 )
+    return buf
+
+
 def run():
 
+
+    cap = get_video()
+
+    while(True):
+        # Capture frame-by-frame
+        img = get_video()
+
+        # Our operations on the frame come here
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        rclasses, rscores, rbboxes =  process_image(img)
+        fig = visualization.plt_bboxes(img, rclasses, rscores, rbboxes)
+
+        frame  = fig2data(fig)
+
+        # Display the resulting frame
+        cv2.imshow('frame',frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()
+
+    exit(0)
 
     while KEEP_RUNNING:
         # cv2.imshow('Depth', get_depth())
